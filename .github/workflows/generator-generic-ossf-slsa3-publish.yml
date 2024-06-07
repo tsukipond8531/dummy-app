@@ -63,3 +63,4 @@ jobs:
       base64-subjects: "${{ needs.build.outputs.digests }}"
       upload-assets: true # Optional: Upload to a new release
       compile-generator: true
+      provenance-name: "slsa-github-generator.intoto.jsonl"

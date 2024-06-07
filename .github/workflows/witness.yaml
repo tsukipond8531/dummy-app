@@ -1,0 +1,42 @@
+name: Witness Build
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read   # To read the workflow path.
+      contents: write # To add assets to a release.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get witness binary
+        run: |
+          wget https://github.com/in-toto/witness/releases/download/v0.4.0/witness_0.4.0_linux_amd64.tar.gz
+          tar xvzf witness_0.4.0_linux_amd64.tar.gz witness
+          mv witness /usr/local/bin
+          chmod 755 /usr/local/bin/witness
+          witness version
+
+      - name: Get witness keys
+        run: |
+          echo "$witness_key" | base64 -d > witness.pem
+          echo "$witness_pub_key" | base64 -d > witness_pub.pem
+        env:
+          witness_key: ${{ secrets.WITNESS_SIGNING_KEY_B64 }}
+          witness_pub_key: ${{ secrets.WITNESS_PUBLIC_KEY_B64 }}
+
+      - name: Build artifacts
+        run: |
+            witness run --step build -o witness-build-att.json -a slsa -a github --attestor-slsa-export -- go build -o dummy-app
+
+      - name: Upload release artefacts
+        uses: alexellis/upload-assets@0.4.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          asset_paths: '["witness-build-att*"]'
