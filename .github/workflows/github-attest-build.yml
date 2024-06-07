@@ -1,0 +1,25 @@
+name: GitHub attest build provenance
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artifacts
+        run: |
+            go build -o dummy-app
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: '${{ github.workspace }}/dummy-app'
